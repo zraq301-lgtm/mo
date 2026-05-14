@@ -22,6 +22,7 @@ export interface ModelConfig {
   syncManager: SyncManager;
 }
 
+// تم الإبقاء على التصدير هنا فقط
 export abstract class BaseModel<T extends BaseRecord> {
   protected module: string;
   protected tenantId: string;
@@ -49,7 +50,7 @@ export abstract class BaseModel<T extends BaseRecord> {
       sync_status: false,
       metadata: {},
       ...overrides,
-    };
+    } as BaseRecord;
   }
 
   async save(record: T): Promise<T> {
@@ -116,6 +117,3 @@ export abstract class BaseModel<T extends BaseRecord> {
   // Override in subclasses to add domain-specific hooks
   protected async beforeSave(_record: T): Promise<void> {}
 }
-
-
-export { BaseModel }
