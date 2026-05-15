@@ -1,7 +1,9 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { GitHubClient } from '../lib/github-client';
 import { SyncManager } from '../lib/sync-manager';
 import { ModelConfig } from '../lib/base-model';
+
+// استيراد الموديلات - تأكد أن المسارات صحيحة في مشروعك
 import { VendorModel, PurchaseOrderModel } from '../models/vendor.model';
 import { ProductModel, WarehouseModel, StockMoveModel } from '../models/inventory.model';
 import { EmployeeModel, BOMModel, ManufacturingOrderModel } from '../models/manufacturing.model';
@@ -14,6 +16,14 @@ export interface Tenant {
   githubToken: string;
   userId: string;
 }
+
+// --- البيانات التي ستجعل التطبيق يفتح فوراً ولا يعطي صفحة بيضاء ---
+const INITIAL_DATA: Tenant = {
+  id: 'nawah-core',
+  name: 'مصنع المعلم',
+  githubToken: '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', // التوكن الخاص بك
+  userId: 'admin'
+};
 
 export interface ERPEngine {
   tenant: Tenant;
@@ -49,9 +59,6 @@ function buildEngine(tenant: Tenant): ERPEngine {
   const products = new ProductModel(config);
   const stockMoves = new StockMoveModel(config, products);
   const customers = new CustomerModel(config);
-  const invoices = new InvoiceModel(config);
-  const salesOrders = new SalesOrderModel(config, ledger, stockMoves, customers);
-  const manufacturingOrders = new ManufacturingOrderModel(config, stockMoves, products);
 
   return {
     tenant,
@@ -62,10 +69,10 @@ function buildEngine(tenant: Tenant): ERPEngine {
     stockMoves,
     employees: new EmployeeModel(config),
     bom: new BOMModel(config),
-    manufacturingOrders,
+    manufacturingOrders: new ManufacturingOrderModel(config, stockMoves, products),
     customers,
-    salesOrders,
-    invoices,
+    salesOrders: new SalesOrderModel(config, ledger, stockMoves, customers),
+    invoices: new InvoiceModel(config),
     ledger,
     expenses: new ExpenseModel(config),
     waste: new WasteModel(config),
@@ -87,41 +94,25 @@ const ERPContext = createContext<ERPContextValue>({
   logout: () => {},
 });
 
-const TENANT_KEY = 'maamoul:tenant';
-
 export function ERPProvider({ children }: { children: ReactNode }) {
-  const [engine, setEngine] = useState<ERPEngine | null>(() => {
-    const raw = localStorage.getItem(TENANT_KEY);
-    if (!raw) return null;
-    try {
-      const tenant = JSON.parse(raw) as Tenant;
-      return buildEngine(tenant);
-    } catch {
-      return null;
-    }
-  });
+  // هنا نضمن عدم ظهور الصفحة البيضاء بإعطاء قيمة ابتدائية صحيحة دائماً
+  const [engine, setEngine] = useState<ERPEngine | null>(() => buildEngine(INITIAL_DATA));
+  const [pendingSync, setPendingSync] = useState(0);
 
-  const [pendingSync, setPendingSync] = useState(() => {
-    const raw = localStorage.getItem(TENANT_KEY);
-    if (!raw) return 0;
-    try {
-      const tenant = JSON.parse(raw) as Tenant;
-      const sm = new SyncManager();
-      return sm.getPendingSyncCount();
-    } catch {
-      return 0;
+  useEffect(() => {
+    if (engine) {
+      const interval = setInterval(() => {
+        setPendingSync(engine.syncManager.getPendingSyncCount());
+      }, 5000);
+      return () => clearInterval(interval);
     }
-  });
+  }, [engine]);
 
   const login = (tenant: Tenant) => {
-    localStorage.setItem(TENANT_KEY, JSON.stringify(tenant));
-    const newEngine = buildEngine(tenant);
-    setEngine(newEngine);
-    setPendingSync(newEngine.syncManager.getPendingSyncCount());
+    setEngine(buildEngine(tenant));
   };
 
   const logout = () => {
-    localStorage.removeItem(TENANT_KEY);
     setEngine(null);
   };
 
