@@ -12,9 +12,34 @@ import {
   LogOut,
   CloudOff,
   Cloud,
-  Truck,
 } from 'lucide-react';
 import { useERP } from '../context/erp-engine';
+
+// 1. كائن الترجمة العربية
+const AR_LANG = {
+  modules: {
+    dashboard: 'لوحة التحكم',
+    purchases: 'المشتريات',
+    inventory: 'المخزون',
+    warehouses: 'المستودعات',
+    manufacturing: 'أوامر التصنيع',
+    employees: 'الموظفين',
+    sales: 'المبيعات',
+    finance: 'المالية',
+  },
+  groups: {
+    main: 'الرئيسية',
+    operations: 'العمليات',
+    production: 'الإنتاج',
+    revenue: 'الإيرادات',
+  },
+  status: {
+    pending: 'قيد المزامنة',
+    synced: 'تم المزامنة مع GitHub',
+    settings: 'الإعدادات',
+    logout: 'تسجيل الخروج'
+  }
+};
 
 export type Module =
   | 'dashboard'
@@ -34,22 +59,15 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, group: 'main' },
-  { id: 'purchases', label: 'Purchases', icon: ShoppingCart, group: 'operations' },
-  { id: 'inventory', label: 'Inventory', icon: Package, group: 'operations' },
-  { id: 'warehouses', label: 'Warehouses', icon: Warehouse, group: 'operations' },
-  { id: 'manufacturing', label: 'Manufacturing', icon: Factory, group: 'production' },
-  { id: 'employees', label: 'Employees', icon: Users, group: 'production' },
-  { id: 'sales', label: 'Sales', icon: TrendingUp, group: 'revenue' },
-  { id: 'finance', label: 'Finance', icon: DollarSign, group: 'revenue' },
+  { id: 'dashboard', label: AR_LANG.modules.dashboard, icon: LayoutDashboard, group: 'main' },
+  { id: 'purchases', label: AR_LANG.modules.purchases, icon: ShoppingCart, group: 'operations' },
+  { id: 'inventory', label: AR_LANG.modules.inventory, icon: Package, group: 'operations' },
+  { id: 'warehouses', label: AR_LANG.modules.warehouses, icon: Warehouse, group: 'operations' },
+  { id: 'manufacturing', label: AR_LANG.modules.manufacturing, icon: Factory, group: 'production' },
+  { id: 'employees', label: AR_LANG.modules.employees, icon: Users, group: 'production' },
+  { id: 'sales', label: AR_LANG.modules.sales, icon: TrendingUp, group: 'revenue' },
+  { id: 'finance', label: AR_LANG.modules.finance, icon: DollarSign, group: 'revenue' },
 ];
-
-const GROUP_LABELS: Record<string, string> = {
-  main: '',
-  operations: 'Operations',
-  production: 'Production',
-  revenue: 'Revenue',
-};
 
 interface SidebarProps {
   active: Module;
@@ -62,7 +80,9 @@ export default function Sidebar({ active, onNavigate }: SidebarProps) {
   const groups = [...new Set(NAV.map((n) => n.group))];
 
   return (
-    <aside className="w-60 bg-slate-900 border-r border-slate-800 flex flex-col h-full shrink-0">
+    // أضفنا dir="rtl" لضبط الاتجاه للعربية
+    <aside dir="rtl" className="w-60 bg-slate-900 border-l border-slate-800 flex flex-col h-full shrink-0">
+      
       {/* Header */}
       <div className="px-5 py-5 border-b border-slate-800">
         <div className="flex items-center gap-2.5">
@@ -70,9 +90,9 @@ export default function Sidebar({ active, onNavigate }: SidebarProps) {
             <FileText className="w-4 h-4 text-white" />
           </div>
           <div>
-            <div className="text-white font-semibold text-sm leading-tight">Maamoul ERP</div>
+            <div className="text-white font-semibold text-sm leading-tight">معمول ERP</div>
             <div className="text-slate-500 text-xs truncate max-w-[120px]">
-              {engine?.tenant.name}
+              {engine?.tenant.name || 'نواة AI-OS'}
             </div>
           </div>
         </div>
@@ -82,9 +102,9 @@ export default function Sidebar({ active, onNavigate }: SidebarProps) {
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
         {groups.map((group) => (
           <div key={group}>
-            {GROUP_LABELS[group] && (
+            {AR_LANG.groups[group as keyof typeof AR_LANG.groups] && (
               <div className="text-xs font-semibold text-slate-600 uppercase tracking-widest px-2 mb-1.5">
-                {GROUP_LABELS[group]}
+                {AR_LANG.groups[group as keyof typeof AR_LANG.groups]}
               </div>
             )}
             <div className="space-y-0.5">
@@ -118,26 +138,26 @@ export default function Sidebar({ active, onNavigate }: SidebarProps) {
           {pendingSync > 0 ? (
             <>
               <CloudOff className="w-3.5 h-3.5 text-amber-500" />
-              <span className="text-amber-500">{pendingSync} pending sync</span>
+              <span className="text-amber-500">{pendingSync} معلق مزامنة</span>
             </>
           ) : (
             <>
               <Cloud className="w-3.5 h-3.5 text-emerald-500" />
-              <span className="text-emerald-500">Synced to GitHub</span>
+              <span className="text-emerald-500">{AR_LANG.status.synced}</span>
             </>
           )}
         </div>
 
         <button className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-slate-800 transition-all">
           <Settings className="w-4 h-4" />
-          Settings
+          {AR_LANG.status.settings}
         </button>
         <button
           onClick={logout}
           className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-red-400 hover:bg-slate-800 transition-all"
         >
           <LogOut className="w-4 h-4" />
-          Logout
+          {AR_LANG.status.logout}
         </button>
       </div>
     </aside>
