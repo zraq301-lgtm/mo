@@ -1,4 +1,4 @@
-name: "Nawha db"
+name: "Nawha db Production Build"
 
 on:
   push:
@@ -42,22 +42,22 @@ jobs:
           npx cap add android
           npx cap sync android
 
-      - name: 6. Inject Firebase & App Identity (Mamoul)
+      - name: 6. Inject Firebase & App Identity (Nawha db)
         shell: bash
         run: |
-          # حقن ملف جوجل (تم تحديث اسم الحزمة إلى com.mamoul.app)
+          # حقن ملف جوجل (تم تحديث اسم الحزمة إلى com.nawhadb.app و الـ project_id)
           cat <<EOF > android/app/google-services.json
           {
             "project_info": {
               "project_number": "162488255991",
-              "project_id": "mamoul-app",
-              "storage_bucket": "mamoul-app.appspot.com"
+              "project_id": "nawha-db",
+              "storage_bucket": "nawha-db.appspot.com"
             },
             "client": [
               {
                 "client_info": {
                   "mobilesdk_app_id": "1:162488255991:android:73d6299f11a1b7aec61af2",
-                  "android_client_info": { "package_name": "com.mamoul.app" }
+                  "android_client_info": { "package_name": "com.nawhadb.app" }
                 },
                 "api_key": [ { "current_key": "AIzaSyAKjsgnoHnGGr3urhm6Kpu7RvxN2dp6sJQ" } ],
                 "services": { "appinvite_service": { "other_platform_oauth_client": [] } }
@@ -71,10 +71,10 @@ jobs:
           APP_GRADLE="android/app/build.gradle"
           MANIFEST="android/app/src/main/AndroidManifest.xml"
           
-          # تعديل اسم التطبيق إلى "معمول" والحزمة إلى com.mamoul.app
-          sed -i 's/<string name="app_name">.*<\/string>/<string name="app_name">معمول<\/string>/' $STRINGS
-          sed -i 's/namespace ".*"/namespace "com.mamoul.app"/' $APP_GRADLE
-          sed -i 's/applicationId ".*"/applicationId "com.mamoul.app"/' $APP_GRADLE
+          # تعديل اسم التطبيق إلى "Nawha db" والحزمة إلى com.nawhadb.app
+          sed -i 's/<string name="app_name">.*<\/string>/<string name="app_name">Nawha db<\/string>/' $STRINGS
+          sed -i 's/namespace ".*"/namespace "com.nawhadb.app"/' $APP_GRADLE
+          sed -i 's/applicationId ".*"/applicationId "com.nawhadb.app"/' $APP_GRADLE
           
           # إضافة أذونات الإشعارات المحلية والجدولة الدقيقة (للتنبيه بنقص المخزن)
           sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />' $MANIFEST
@@ -98,29 +98,29 @@ jobs:
           ./gradlew assembleRelease
           ./gradlew bundleRelease
 
-      - name: 9. Sign APK & AAB (Mamoul Credentials)
+      - name: 9. Sign APK & AAB (Nawha db Credentials)
         run: |
-          # توليد مفتاح توقيع جديد باسم معمول
-          keytool -genkey -v -keystore mamoul.jks -alias mamoul_alias -keyalg RSA -keysize 2048 -validity 10000 \
-            -storepass "mamoul_pass_2026" -keypass "mamoul_pass_2026" \
-            -dname "CN=MamoulApp, OU=Production, O=Mamoul, L=Cairo, C=EG"
+          # توليد مفتاح توقيع جديد باسم nawha_db
+          keytool -genkey -v -keystore nawha_db.jks -alias nawha_db_alias -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass "nawha_pass_2026" -keypass "nawha_pass_2026" \
+            -dname "CN=NawhaDBApp, OU=Production, O=NawhaDB, L=Cairo, C=EG"
           
           APK_PATH=$(find android/app/build/outputs/apk/release/ -name "*.apk" | head -n 1)
-          /usr/local/lib/android/sdk/build-tools/34.0.0/apksigner sign --ks mamoul.jks \
-            --ks-pass pass:"mamoul_pass_2026" --out Mamoul-Final.apk "$APK_PATH"
+          /usr/local/lib/android/sdk/build-tools/34.0.0/apksigner sign --ks nawha_db.jks \
+            --ks-pass pass:"nawha_pass_2026" --out Nawha-db-Final.apk "$APK_PATH"
           
           AAB_PATH=$(find android/app/build/outputs/bundle/release/ -name "*.aab" | head -n 1)
-          jarsigner -keystore mamoul.jks -storepass "mamoul_pass_2026" "$AAB_PATH" mamoul_alias
-          cp "$AAB_PATH" Mamoul-Final.aab
+          jarsigner -keystore nawha_db.jks -storepass "nawha_pass_2026" "$AAB_PATH" nawha_db_alias
+          cp "$AAB_PATH" Nawha-db-Final.aab
 
       - name: 10. Publish Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ github.run_number }}
-          name: "Mamoul Build v${{ github.run_number }}"
+          name: "Nawha db Build v${{ github.run_number }}"
           files: |
-            Mamoul-Final.apk
-            Mamoul-Final.aab
-            mamoul.jks
+            Nawha-db-Final.apk
+            Nawha-db-Final.aab
+            nawha_db.jks
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
