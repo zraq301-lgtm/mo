@@ -1,3 +1,4 @@
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -12,10 +13,14 @@ import {
   LogOut,
   CloudOff,
   Cloud,
+  X
 } from 'lucide-react';
 import { useERP } from '../context/erp-engine';
 
-// 1. كائن الترجمة العربية
+// 1. تعريف أنواع الموديلات
+export type Module = 'dashboard' | 'purchases' | 'inventory' | 'manufacturing' | 'sales' | 'finance' | 'employees' | 'warehouses';
+
+// 2. كائن الترجمة العربية
 const AR_LANG = {
   modules: {
     dashboard: 'لوحة التحكم',
@@ -34,31 +39,15 @@ const AR_LANG = {
     revenue: 'الإيرادات',
   },
   status: {
-    pending: 'قيد المزامنة',
+    pending: 'معلق مزامنة',
     synced: 'تم المزامنة مع GitHub',
     settings: 'الإعدادات',
     logout: 'تسجيل الخروج'
   }
 };
 
-export type Module =
-  | 'dashboard'
-  | 'purchases'
-  | 'inventory'
-  | 'manufacturing'
-  | 'sales'
-  | 'finance'
-  | 'employees'
-  | 'warehouses';
-
-interface NavItem {
-  id: Module;
-  label: string;
-  icon: React.ElementType;
-  group: string;
-}
-
-const NAV: NavItem[] = [
+// 3. مصفوفة الروابط (NAV) - كانت مفقودة وهي سبب الشاشة السوداء
+const NAV = [
   { id: 'dashboard', label: AR_LANG.modules.dashboard, icon: LayoutDashboard, group: 'main' },
   { id: 'purchases', label: AR_LANG.modules.purchases, icon: ShoppingCart, group: 'operations' },
   { id: 'inventory', label: AR_LANG.modules.inventory, icon: Package, group: 'operations' },
@@ -72,94 +61,127 @@ const NAV: NavItem[] = [
 interface SidebarProps {
   active: Module;
   onNavigate: (m: Module) => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-export default function Sidebar({ active, onNavigate }: SidebarProps) {
+export default function Sidebar({ active, onNavigate, isOpen, onClose }: SidebarProps) {
   const { engine, pendingSync, logout } = useERP();
-
-  const groups = [...new Set(NAV.map((n) => n.group))];
+  
+  // استخراج المجموعات الفريدة
+  const groups = ['main', 'operations', 'production', 'revenue'];
 
   return (
-    // أضفنا dir="rtl" لضبط الاتجاه للعربية
-    <aside dir="rtl" className="w-60 bg-slate-900 border-l border-slate-800 flex flex-col h-full shrink-0">
-      
-      {/* Header */}
-      <div className="px-5 py-5 border-b border-slate-800">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
-            <FileText className="w-4 h-4 text-white" />
-          </div>
-          <div>
-            <div className="text-white font-semibold text-sm leading-tight">معمول ERP</div>
-            <div className="text-slate-500 text-xs truncate max-w-[120px]">
-              {engine?.tenant.name || 'نواة AI-OS'}
-            </div>
-          </div>
-        </div>
-      </div>
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* خلفية معتمة (Overlay) */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+          />
 
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
-        {groups.map((group) => (
-          <div key={group}>
-            {AR_LANG.groups[group as keyof typeof AR_LANG.groups] && (
-              <div className="text-xs font-semibold text-slate-600 uppercase tracking-widest px-2 mb-1.5">
-                {AR_LANG.groups[group as keyof typeof AR_LANG.groups]}
+          {/* القائمة الجانبية (Sidebar) */}
+          <motion.aside
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            dir="rtl"
+            className="fixed right-0 top-0 w-72 bg-slate-900 border-l border-slate-800 flex flex-col h-full z-50 shadow-2xl"
+          >
+            {/* Header */}
+            <div className="px-6 py-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-900/20">
+                  <FileText className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <div className="text-white font-bold text-sm leading-tight">معمول ERP</div>
+                  <div className="text-slate-500 text-[10px] font-medium tracking-wider uppercase">نواة AI-OS</div>
+                </div>
               </div>
-            )}
-            <div className="space-y-0.5">
-              {NAV.filter((n) => n.group === group).map((item) => {
-                const Icon = item.icon;
-                const isActive = active === item.id;
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => onNavigate(item.id)}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-all ${
-                      isActive
-                        ? 'bg-blue-600 text-white font-medium'
-                        : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4 shrink-0" />
-                    {item.label}
-                  </button>
-                );
-              })}
+              <button 
+                onClick={onClose} 
+                className="p-2 rounded-lg text-slate-500 hover:text-white hover:bg-slate-800 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
-          </div>
-        ))}
-      </nav>
 
-      {/* Footer */}
-      <div className="px-3 py-4 border-t border-slate-800 space-y-1">
-        {/* Sync status */}
-        <div className="flex items-center gap-2.5 px-3 py-2 text-xs">
-          {pendingSync > 0 ? (
-            <>
-              <CloudOff className="w-3.5 h-3.5 text-amber-500" />
-              <span className="text-amber-500">{pendingSync} معلق مزامنة</span>
-            </>
-          ) : (
-            <>
-              <Cloud className="w-3.5 h-3.5 text-emerald-500" />
-              <span className="text-emerald-500">{AR_LANG.status.synced}</span>
-            </>
-          )}
-        </div>
+            {/* Navigation Body */}
+            <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-7 custom-scrollbar">
+              {groups.map((group) => (
+                <div key={group} className="space-y-2">
+                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] px-3 mb-3 text-right">
+                    {AR_LANG.groups[group as keyof typeof AR_LANG.groups]}
+                  </div>
+                  <div className="space-y-1">
+                    {NAV.filter((n) => n.group === group).map((item) => {
+                      const Icon = item.icon;
+                      const isActive = active === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => {
+                            onNavigate(item.id as Module);
+                            onClose();
+                          }}
+                          className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm transition-all duration-200 ${
+                            isActive 
+                              ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20 font-semibold' 
+                              : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                          }`}
+                        >
+                          <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-500'}`} />
+                          <span>{item.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </nav>
 
-        <button className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-slate-800 transition-all">
-          <Settings className="w-4 h-4" />
-          {AR_LANG.status.settings}
-        </button>
-        <button
-          onClick={logout}
-          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-red-400 hover:bg-slate-800 transition-all"
-        >
-          <LogOut className="w-4 h-4" />
-          {AR_LANG.status.logout}
-        </button>
-      </div>
-    </aside>
+            {/* Footer Section */}
+            <div className="p-4 bg-slate-900 border-t border-slate-800 space-y-2">
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-800/30">
+                {pendingSync > 0 ? (
+                  <>
+                    <div className="relative">
+                      <CloudOff className="w-4 h-4 text-amber-500" />
+                      <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full animate-ping" />
+                    </div>
+                    <span className="text-xs font-medium text-amber-500">{pendingSync} {AR_LANG.status.pending}</span>
+                  </>
+                ) : (
+                  <>
+                    <Cloud className="w-4 h-4 text-emerald-500" />
+                    <span className="text-xs font-medium text-emerald-500">{AR_LANG.status.synced}</span>
+                  </>
+                )}
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                <button className="flex items-center justify-center gap-2 p-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-all">
+                  <Settings className="w-4 h-4" />
+                  <span>{AR_LANG.status.settings}</span>
+                </button>
+                <button 
+                  onClick={logout}
+                  className="flex items-center justify-center gap-2 p-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-red-400 hover:bg-red-950/20 transition-all"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>{AR_LANG.status.logout}</span>
+                </button>
+              </div>
+            </div>
+          </motion.aside>
+        </>
+      )}
+    </AnimatePresence>
   );
 }
