@@ -1,4 +1,4 @@
-name: "Mamoul Production Build"
+name: name: "Nawha db"
 
 on:
   push:
