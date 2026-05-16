@@ -105,41 +105,43 @@ export default function PurchasesModule() {
   };
 
   const columns = [
-    { key: 'reference', label: 'Reference' },
-    { key: 'vendor_name', label: 'Vendor' },
-    { key: 'order_date', label: 'Date' },
-    { key: 'total', label: 'Total', render: (r: PurchaseOrder) => `$${r.total?.toLocaleString() ?? 0}` },
-    { key: 'status', label: 'Status', render: (r: PurchaseOrder) => (
-      <span className={`text-xs px-2 py-0.5 rounded-full ${r.status === 'active' ? 'bg-emerald-950 text-emerald-400' : 'bg-slate-800 text-slate-400'}`}>{r.status}</span>
+    { key: 'reference', label: 'الرقم المرجعي' },
+    { key: 'vendor_name', label: 'المورد' },
+    { key: 'order_date', label: 'التاريخ' },
+    { key: 'total', label: 'الإجمالي', render: (r: PurchaseOrder) => `$${r.total?.toLocaleString() ?? 0}` },
+    { key: 'status', label: 'الحالة', render: (r: PurchaseOrder) => (
+      <span className={`text-xs px-2 py-0.5 rounded-full ${r.status === 'active' ? 'bg-emerald-950 text-emerald-400' : 'bg-slate-800 text-slate-400'}`}>
+        {r.status === 'active' ? 'نشط' : r.status}
+      </span>
     )},
   ];
 
   if (view === 'form') {
     return (
-      <div className="p-6 max-w-4xl">
+      <div className="p-6 max-w-4xl" dir="rtl">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-white">{selected ? `Edit ${selected.reference}` : 'New Purchase Order'}</h1>
+          <h1 className="text-2xl font-bold text-white">{selected ? `تعديل ${selected.reference}` : 'أمر شراء جديد'}</h1>
           <button onClick={() => setView('list')} className="text-slate-400 hover:text-white transition"><X className="w-5 h-5" /></button>
         </div>
         <div className="space-y-4">
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 grid grid-cols-2 gap-4">
             <div>
-              <label className="field-label">Vendor</label>
+              <label className="field-label">المورد</label>
               <select value={form.vendor_id} onChange={(e) => selectVendor(e.target.value)} className="input-field">
-                <option value="">Select vendor...</option>
+                <option value="">اختر المورد...</option>
                 {vendors.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="field-label">Order Date</label>
+              <label className="field-label">تاريخ الطلب</label>
               <input type="date" value={form.order_date} onChange={(e) => setForm({ ...form, order_date: e.target.value })} className="input-field" />
             </div>
             <div>
-              <label className="field-label">Expected Delivery</label>
+              <label className="field-label">تاريخ الاستلام المتوقع</label>
               <input type="date" value={form.expected_date} onChange={(e) => setForm({ ...form, expected_date: e.target.value })} className="input-field" />
             </div>
             <div>
-              <label className="field-label">Currency</label>
+              <label className="field-label">العملة</label>
               <select value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })} className="input-field">
                 <option value="USD">USD</option><option value="EUR">EUR</option><option value="SAR">SAR</option><option value="AED">AED</option>
               </select>
@@ -147,38 +149,38 @@ export default function PurchasesModule() {
           </div>
           <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
             <div className="px-5 py-3 border-b border-slate-800 flex items-center justify-between">
-              <span className="text-sm font-semibold text-white">Order Lines</span>
-              <button onClick={addLine} className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300"><Plus className="w-3.5 h-3.5" /> Add Line</button>
+              <span className="text-sm font-semibold text-white">بنود الطلب</span>
+              <button onClick={addLine} className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300"><Plus className="w-3.5 h-3.5" /> إضافة بند</button>
             </div>
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-800">
-                  <th className="px-4 py-2 text-left text-xs text-slate-500">Product</th>
-                  <th className="px-4 py-2 text-right text-xs text-slate-500">Qty</th>
-                  <th className="px-4 py-2 text-right text-xs text-slate-500">Unit Price</th>
-                  <th className="px-4 py-2 text-right text-xs text-slate-500">Total</th>
+                  <th className="px-4 py-2 text-right text-xs text-slate-500">المنتج</th>
+                  <th className="px-4 py-2 text-left text-xs text-slate-500">الكمية</th>
+                  <th className="px-4 py-2 text-left text-xs text-slate-500">سعر الوحدة</th>
+                  <th className="px-4 py-2 text-left text-xs text-slate-500">الإجمالي</th>
                   <th className="w-8" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
                 {form.lines.length === 0 && (
-                  <tr><td colSpan={5} className="px-4 py-6 text-center text-slate-500 text-xs">No lines added.</td></tr>
+                  <tr><td colSpan={5} className="px-4 py-6 text-center text-slate-500 text-xs">لم يتم إضافة أي بنود.</td></tr>
                 )}
                 {form.lines.map((line) => (
                   <tr key={line.id}>
                     <td className="px-4 py-2">
                       <select value={line.product_id} onChange={(e) => selectProduct(line.id, e.target.value)} className="input-field text-xs py-1.5">
-                        <option value="">Select product...</option>
+                        <option value="">اختر المنتج...</option>
                         {products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                       </select>
                     </td>
                     <td className="px-4 py-2">
-                      <input type="number" value={line.quantity} onChange={(e) => updateLine(line.id, { quantity: +e.target.value })} className="input-field text-xs py-1.5 w-20 text-right" />
+                      <input type="number" value={line.quantity} onChange={(e) => updateLine(line.id, { quantity: +e.target.value })} className="input-field text-xs py-1.5 w-20 text-left" />
                     </td>
                     <td className="px-4 py-2">
-                      <input type="number" value={line.unit_price} onChange={(e) => updateLine(line.id, { unit_price: +e.target.value })} className="input-field text-xs py-1.5 w-24 text-right" />
+                      <input type="number" value={line.unit_price} onChange={(e) => updateLine(line.id, { unit_price: +e.target.value })} className="input-field text-xs py-1.5 w-24 text-left" />
                     </td>
-                    <td className="px-4 py-2 text-right text-slate-300">${line.total.toFixed(2)}</td>
+                    <td className="px-4 py-2 text-left text-slate-300">${line.total.toFixed(2)}</td>
                     <td className="px-2 py-2">
                       <button onClick={() => removeLine(line.id)} className="text-slate-600 hover:text-red-400 transition"><Trash2 className="w-3.5 h-3.5" /></button>
                     </td>
@@ -187,13 +189,13 @@ export default function PurchasesModule() {
               </tbody>
             </table>
             <div className="px-5 py-3 border-t border-slate-800 flex justify-end">
-              <div className="text-sm text-white font-bold">Total: ${total.toFixed(2)}</div>
+              <div className="text-sm text-white font-bold">الإجمالي: ${total.toFixed(2)}</div>
             </div>
           </div>
           <div className="flex justify-end gap-3">
-            <button onClick={() => setView('list')} className="btn-secondary">Cancel</button>
-            <button onClick={() => handleSave(false)} disabled={saving} className="btn-secondary"><Save className="w-4 h-4" />Save Draft</button>
-            <button onClick={() => handleSave(true)} disabled={saving} className="btn-primary">Confirm & Sync</button>
+            <button onClick={() => setView('list')} className="btn-secondary">إلغاء</button>
+            <button onClick={() => handleSave(false)} disabled={saving} className="btn-secondary"><Save className="w-4 h-4" />حفظ كمسودة</button>
+            <button onClick={() => handleSave(true)} disabled={saving} className="btn-primary">تأكيد ومزامنة</button>
           </div>
         </div>
       </div>
@@ -201,14 +203,16 @@ export default function PurchasesModule() {
   }
 
   return (
-    <RecordList
-      title="Purchase Orders"
-      records={records}
-      columns={columns}
-      loading={loading}
-      onNew={openNew}
-      onSelect={(r) => { setSelected(r); setForm({ vendor_id: r.vendor_id, vendor_name: r.vendor_name, order_date: r.order_date, expected_date: r.expected_date, currency: r.currency, notes: r.notes, lines: r.lines }); setView('form'); }}
-      onRefresh={loadAll}
-    />
+    <div dir="rtl">
+      <RecordList
+        title="أوامر الشراء"
+        records={records}
+        columns={columns}
+        loading={loading}
+        onNew={openNew}
+        onSelect={(r) => { setSelected(r); setForm({ vendor_id: r.vendor_id, vendor_name: r.vendor_name, order_date: r.order_date, expected_date: r.expected_date, currency: r.currency, notes: r.notes, lines: r.lines }); setView('form'); }}
+        onRefresh={loadAll}
+      />
+    </div>
   );
 }
