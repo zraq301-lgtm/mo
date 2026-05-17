@@ -1,8 +1,7 @@
-// api/engine.js
 const ALLOWED_MODULES = ['dashboard', 'inventory', 'sales', 'purchases', 'manufacturing'];
 
 export default async function handler(req, res) {
-    // إعدادات CORS للحماية والوصول
+    // إعدادات CORS للحماية والوصول للواجهات المستقلة
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -14,7 +13,7 @@ export default async function handler(req, res) {
     const REPO_OWNER = process.env.NAWAH_REPO_OWNER;
     const REPO_NAME = process.env.NAWAH_REPO_NAME;
 
-    // 1. استقبال وحفظ البيانات في جيت هب مباشرة
+    // استقبال وحفظ البيانات في جيت هب مباشرة
     if (req.method === 'POST') {
         const { module_name, record_id, payload } = req.body;
 
@@ -29,15 +28,22 @@ export default async function handler(req, res) {
             // أ. محاولة معرفة هل الملف موجود قبل كدة عشان نجيب الـ SHA بتاعه (تحديث أو إضافة)
             let sha = null;
             const checkRes = await fetch(githubUrl, {
-                headers: { 'Authorization': `Bearer ${GITHUB_TOKEN}` }
+                headers: { 
+                    'Authorization': `Bearer ${GITHUB_TOKEN}`,
+                    'User-Agent': 'Nawah-DB-Engine'
+                }
             });
+            
             if (checkRes.status === 200) {
                 const checkData = await checkRes.json();
                 sha = checkData.sha;
             }
 
-            // ب. تحويل البيانات لـ Base64 كما يطلب جيت هب
-            const contentBase64 = Buffer.from(JSON.stringify(payload, null, 2)).toString('base64');
+            // ب. تحويل البيانات لـ Base64 بأمان وتوافقية عالية مع Vercel
+            const jsonString = JSON.stringify(payload, null, 2);
+            const contentBase64 = typeof Buffer !== 'undefined'
+                ? Buffer.from(jsonString).toString('base64')
+                : btoa(unescape(encodeURIComponent(jsonString)));
 
             // ج. الرفع المباشر لجيت هب
             const uploadRes = await fetch(githubUrl, {
