@@ -1,0 +1,23 @@
+[
+  {
+    "id": "INV-1778984952708",
+    "date": "2026-05-17",
+    "vendorId": "مورد عام",
+    "paymentMethod": "كاش",
+    "status": "completed",
+    "totalAmount": 625,
+    "item": "سكر ",
+    "quantity": "25",
+    "price": "25",
+    "total": 625,
+    "items": [
+      {
+        "productId": "سكر ",
+        "name": "سكر ",
+        "quantity": 25,
+        "unitPrice": 25,
+        "total": 625
+      }
+    ]
+  }
+]
