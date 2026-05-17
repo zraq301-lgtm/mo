@@ -8,12 +8,20 @@ export default async function handler(req, res) {
 
     if (req.method === 'OPTIONS') return res.status(200).end();
 
+    // 💡 ميزة الفحص السريع: إذا فتحت الرابط من المتصفح العادي سيرد عليك فوراً
+    if (req.method === 'GET') {
+        return res.status(200).json({ 
+            status: "online", 
+            message: "محرك بيانات معمول يعمل بنجاح على فيرسل 🚀" 
+        });
+    }
+
     // جلب بيانات التوكن والمستودع من متغيرات فيرسل السرية بأمان
     const GITHUB_TOKEN = process.env.NAWAH_GITHUB_TOKEN;
     const REPO_OWNER = process.env.NAWAH_REPO_OWNER;
     const REPO_NAME = process.env.NAWAH_REPO_NAME;
 
-    // استقبال وحفظ البيانات في جيت هب مباشرة
+    // استقبال وحفظ البيانات في جيت هب مباشرة (طلبات الـ ERP)
     if (req.method === 'POST') {
         const { module_name, record_id, payload } = req.body;
 
@@ -25,7 +33,7 @@ export default async function handler(req, res) {
         const githubUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${filePath}`;
 
         try {
-            // أ. محاولة معرفة هل الملف موجود قبل كدة عشان نجيب الـ SHA بتاعه (تحديث أو إضافة)
+            // أ. محاولة معرفة هل الملف موجود قبل كدة عشان نجيب الـ SHA بتاعه
             let sha = null;
             const checkRes = await fetch(githubUrl, {
                 headers: { 
@@ -56,7 +64,7 @@ export default async function handler(req, res) {
                 body: JSON.stringify({
                     message: `🔄 Nawah Commit: ${record_id} in ${module_name}`,
                     content: contentBase64,
-                    sha: sha // لو موجود هيحدثه، لو مش موجود (null) هيضيفه جديد
+                    sha: sha
                 })
             });
 
